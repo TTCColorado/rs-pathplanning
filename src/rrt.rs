@@ -323,6 +323,7 @@ pub fn line_to_origin(node: Arc<Node>, turn_radius: f64, step_size: f64) -> Line
 type SpacialTree = Arc<Mutex<RTree<NodeEnvelope>>>;
 
 pub struct RRT {
+    root: Arc<Node>,
     goal: Coordinate<f64>,
     goal_yaw: f64,
     max_iter: usize,
@@ -333,6 +334,7 @@ pub struct RRT {
 
 impl RRT {
     pub fn new(
+        root: Arc<Node>,
         start: Coordinate<f64>,
         start_yaw: f64,
         goal: Coordinate<f64>,
@@ -343,8 +345,12 @@ impl RRT {
     ) -> RRT {
         let root = Arc::new(Node::new_root(start.into(), start_yaw));
         let spatial = Arc::new(Mutex::new(RTree::new()));
-        spatial.lock().unwrap().insert(NodeEnvelope::new(root));
+        spatial
+            .lock()
+            .unwrap()
+            .insert(NodeEnvelope::new(root.clone()));
         RRT {
+            root,
             goal,
             goal_yaw,
             max_iter,
@@ -596,7 +602,33 @@ impl RRT {
         None
     }
 
+    // See if there is a simple route before RRT planning.
+    pub fn precheck(&self) -> Option<LineString<f64>> {
+        let goal_node = Arc::new(Node::new_goal(
+            self.goal.into(),
+            self.root.clone(),
+            self.goal_yaw,
+        ));
+
+        let line = line_to_origin(goal_node, self.space.get_steer(), self.step_size);
+
+        if self.space.verify(&line) {
+            // flip line so start is at the head
+            let mut points = line.into_points();
+            points.reverse();
+            let rev_line: LineString<f64> = points.into();
+
+            Some(rev_line)
+        } else {
+            None
+        }
+    }
+
     pub fn plan(&self) -> Option<LineString<f64>> {
+        if let Some(line) = self.precheck() {
+            return Some(line);
+        }
+
         let pool = rayon::ThreadPoolBuilder::new()
             .num_threads(4)
             // .stack_size(32 * 1024 * 1024)

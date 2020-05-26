@@ -2,6 +2,7 @@ extern crate gnuplot;
 extern crate pathplanning;
 extern crate serde;
 
+use geo::algorithm::euclidean_length::EuclideanLength;
 use geo::{Coordinate, LineString, Point, Polygon, Rect};
 use gnuplot::{Color, Figure};
 use pathplanning::rrt::{create_circle, Robot, Space, RRT};
@@ -41,7 +42,7 @@ fn main() {
 
     let (bx, by): (Vec<f64>, Vec<f64>) = bounds.exterior().points_iter().map(|p| p.x_y()).unzip();
 
-    let robot = Robot::new(1.8, 3.0, 0.8);
+    let robot = Robot::new(1.6, 3.0, 0.8);
     let space = Space::new(bounds, robot, obstacle_list.clone());
 
     let buffer_obs = space.get_obs();
@@ -78,6 +79,7 @@ fn main() {
             let (px, py): (Vec<f64>, Vec<f64>) = path.points_iter().map(|p| p.x_y()).unzip();
             axes.lines(&px, &py, &[Color("green")]);
             println!("Num points: {:?}", px.len());
+            println!("Path length: {:?}", path.euclidean_length());
         }
         None => println!("Unable to generate path"),
     }
