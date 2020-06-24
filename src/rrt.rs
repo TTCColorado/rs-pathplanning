@@ -334,7 +334,6 @@ pub struct RRT {
 
 impl RRT {
     pub fn new(
-        root: Arc<Node>,
         start: Coordinate<f64>,
         start_yaw: f64,
         goal: Coordinate<f64>,
@@ -604,30 +603,47 @@ impl RRT {
 
     // See if there is a simple route before RRT planning.
     pub fn precheck(&self) -> Option<LineString<f64>> {
-        let goal_node = Arc::new(Node::new_goal(
-            self.goal.into(),
-            self.root.clone(),
-            self.goal_yaw,
-        ));
+        let (ex, ey) = self.root.get_coord().x_y();
+        let (sx, sy) = self.goal.x_y();
 
-        let line = line_to_origin(goal_node, self.space.get_steer(), self.step_size);
+        let conf = DubinsConfig {
+            sx,
+            sy,
+            syaw: self.goal_yaw,
+            ex,
+            ey,
+            eyaw: self.root.get_yaw(),
+            turn_radius: self.space.get_steer(),
+            step_size: self.step_size,
+        };
 
-        if self.space.verify(&line) {
-            // flip line so start is at the head
-            let mut points = line.into_points();
-            points.reverse();
-            let rev_line: LineString<f64> = points.into();
+        match dubins_path_planning(&conf) {
+            Some((px, py, _, _, _)) => {
+                let points: Vec<(f64, f64)> = px.into_iter().zip(py.into_iter()).collect();
+                let line: LineString<f64> = points.into();
 
-            Some(rev_line)
-        } else {
-            None
+                if self.space.verify(&line) {
+                    // flip line so start is at the head
+                    let mut points = line.into_points();
+                    points.reverse();
+                    let rev_line: LineString<f64> = points.into();
+
+                    Some(rev_line)
+                } else {
+                    None
+                }
+            }
+            _ => None,
         }
     }
 
     pub fn plan(&self) -> Option<LineString<f64>> {
+        println!("Running precheck");
         if let Some(line) = self.precheck() {
+            println!("precheck found solution, we're done here");
             return Some(line);
         }
+        println!("Precheck couldn't find solution, continue to RRT");
 
         let pool = rayon::ThreadPoolBuilder::new()
             .num_threads(4)

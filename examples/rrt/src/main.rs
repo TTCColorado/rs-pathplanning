@@ -42,7 +42,7 @@ fn main() {
 
     let (bx, by): (Vec<f64>, Vec<f64>) = bounds.exterior().points_iter().map(|p| p.x_y()).unzip();
 
-    let robot = Robot::new(1.6, 3.0, 0.8);
+    let robot = Robot::new(1.8, 3.0, 1.1);
     let space = Space::new(bounds, robot, obstacle_list.clone());
 
     let buffer_obs = space.get_obs();
