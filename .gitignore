@@ -6,3 +6,5 @@ Cargo.lock
 tags
 tags.lock
 tags.temp
+*.egg-info
+*.so
