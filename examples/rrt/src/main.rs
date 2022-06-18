@@ -40,7 +40,7 @@ fn main() {
 
     let bounds = Polygon::new(LineString::from(conf.bounds), vec![]);
 
-    let (bx, by): (Vec<f64>, Vec<f64>) = bounds.exterior().points_iter().map(|p| p.x_y()).unzip();
+    let (bx, by): (Vec<f64>, Vec<f64>) = bounds.exterior().points().map(|p| p.x_y()).unzip();
 
     let robot = Robot::new(1.8, 3.0, 1.1);
     let space = Space::new(bounds, robot, obstacle_list.clone());
@@ -49,7 +49,7 @@ fn main() {
     let (bbx, bby): (Vec<f64>, Vec<f64>) = space
         .get_bounds()
         .exterior()
-        .points_iter()
+        .points()
         .map(|p| p.x_y())
         .unzip();
 
@@ -76,7 +76,7 @@ fn main() {
     match planner.plan() {
         Some(path) => {
             println!("Path generated!");
-            let (px, py): (Vec<f64>, Vec<f64>) = path.points_iter().map(|p| p.x_y()).unzip();
+            let (px, py): (Vec<f64>, Vec<f64>) = path.points().map(|p| p.x_y()).unzip();
             axes.lines(&px, &py, &[Color("green")]);
             println!("Num points: {:?}", px.len());
             println!("Path length: {:?}", path.euclidean_length());
@@ -85,12 +85,12 @@ fn main() {
     }
 
     for obs in obstacle_list.iter() {
-        let (ox, oy): (Vec<f64>, Vec<f64>) = obs.exterior().points_iter().map(|p| p.x_y()).unzip();
+        let (ox, oy): (Vec<f64>, Vec<f64>) = obs.exterior().points().map(|p| p.x_y()).unzip();
         axes.lines(&ox, &oy, &[Color("red")]);
     }
 
     for obs in buffer_obs.iter() {
-        let (ox, oy): (Vec<f64>, Vec<f64>) = obs.exterior().points_iter().map(|p| p.x_y()).unzip();
+        let (ox, oy): (Vec<f64>, Vec<f64>) = obs.exterior().points().map(|p| p.x_y()).unzip();
         axes.lines(&ox, &oy, &[Color("blue")]);
     }
 

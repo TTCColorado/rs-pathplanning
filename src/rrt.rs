@@ -81,7 +81,7 @@ impl Space {
     pub fn new(bounds: Polygon<f64>, robot: Robot, obstacle_list: Vec<Polygon<f64>>) -> Space {
         let width = robot.get_width() / 2.0;
         let bounds = buffer_poly(&bounds, -width);
-        let points: Vec<Point<f64>> = bounds.exterior().points_iter().collect();
+        let points: Vec<Point<f64>> = bounds.exterior().points().collect();
         let (fx, fy) = points[0].x_y();
         let mut minx = fx;
         let mut maxx = fx;
