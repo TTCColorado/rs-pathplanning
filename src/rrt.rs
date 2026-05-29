@@ -1,15 +1,15 @@
 use crate::dubins::{dubins_path_planning, DubinsConfig};
 use geo::algorithm::{
-    contains::Contains, euclidean_distance::EuclideanDistance, euclidean_length::EuclideanLength,
-    intersects::Intersects,
+    contains::Contains, Distance, Length, Area, intersects::Intersects,
 };
-use geo::{Coordinate, LineString, Point, Polygon};
+use geo::{Euclidean, LineString, Point, Polygon};
 use geo_offset::Offset;
 use rand::{thread_rng, Rng};
 use rayon::prelude::*;
 use rstar::{PointDistance, RTree, RTreeObject, AABB};
 use std::f64::consts::PI;
 use std::sync::{Arc, Mutex};
+use geo_types::Coord;
 
 const RECURSION_LIMIT: usize = 16;
 
@@ -63,7 +63,12 @@ fn buffer_poly(poly: &Polygon<f64>, buffer: f64) -> Polygon<f64> {
     poly.offset(buffer)
         .expect("polygon to set a buffer")
         .into_iter()
-        .last()
+        // NOTE: if there are corridors in the polygon smaller than the contraction size you'll end
+        // up with more than one polygon, since those corridors will collapse. We should always
+        // select the largest corridor to have the best chance of finding a solution.
+        .max_by(|a, b| {
+            a.signed_area().partial_cmp(&b.signed_area()).expect("should compare areas")
+        })
         .expect("should get buffered polygon")
 }
 
@@ -204,7 +209,7 @@ impl Node {
         &self.point
     }
 
-    pub fn get_coord(&self) -> Coordinate<f64> {
+    pub fn get_coord(&self) -> Coord<f64> {
         self.point.into()
     }
 
@@ -241,7 +246,7 @@ impl PointDistance for NodeEnvelope {
         let p1 = Point::from((point[0], point[1]));
         let p2 = self.inner.get_point();
 
-        p1.euclidean_distance(p2)
+        Euclidean.distance(p1, *p2)
     }
 }
 
@@ -324,7 +329,7 @@ type SpacialTree = Arc<Mutex<RTree<NodeEnvelope>>>;
 
 pub struct RRT {
     root: Arc<Node>,
-    goal: Coordinate<f64>,
+    goal: Coord<f64>,
     goal_yaw: f64,
     max_iter: usize,
     step_size: f64,
@@ -334,9 +339,9 @@ pub struct RRT {
 
 impl RRT {
     pub fn new(
-        start: Coordinate<f64>,
+        start: Coord<f64>,
         start_yaw: f64,
-        goal: Coordinate<f64>,
+        goal: Coord<f64>,
         goal_yaw: f64,
         max_iter: usize,
         step_size: f64,
@@ -570,10 +575,10 @@ impl RRT {
     //             let (px, py, _, _, _) =
     //                 dubins_path_planning(&conf).expect("should create dubins segment");
 
-    //             let mut new_points: Vec<Coordinate<f64>> = px
+    //             let mut new_points: Vec<Coord<f64>> = px
     //                 .into_iter()
     //                 .zip(py.into_iter())
-    //                 .map(|(x, y)| Coordinate { x, y })
+    //                 .map(|(x, y)| Coord { x, y })
     //                 .collect();
 
     //             points.append(&mut new_points);
@@ -657,8 +662,8 @@ impl RRT {
                 .map(|_| self.plan_one())
                 .filter_map(|r| r)
                 .min_by(|a, b| {
-                    let a_cost = a.euclidean_length();
-                    let b_cost = b.euclidean_length();
+                    let a_cost = Euclidean.length(a);
+                    let b_cost = Euclidean.length(b);
                     a_cost
                         .partial_cmp(&b_cost)
                         .expect("should compared route costs")

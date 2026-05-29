@@ -1,4 +1,3 @@
-use geo::{Coordinate, LineString};
 use std::f64::{consts::PI, INFINITY};
 
 #[derive(Clone)]
