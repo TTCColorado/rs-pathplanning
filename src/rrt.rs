@@ -84,7 +84,7 @@ pub struct Space {
 
 impl Space {
     pub fn new(bounds: Polygon<f64>, robot: Robot, obstacle_list: Vec<Polygon<f64>>) -> Space {
-        let width = robot.get_width() / 2.0;
+        let width = if robot.get_width() != 0.0 {robot.get_width() / 2.0} else {0.0};
         let bounds = buffer_poly(&bounds, -width);
         let points: Vec<Point<f64>> = bounds.exterior().points().collect();
         let (fx, fy) = points[0].x_y();
