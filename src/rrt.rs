@@ -598,12 +598,36 @@ impl RRT {
                     .unwrap()
                     .insert(NodeEnvelope::new(rnd_node.clone()));
 
-                if let Some(finish) = self.check_finish(rnd_node) {
+                if let Some(finish) = self.check_finish(rnd_node.clone()) {
                     return Some(finish);
                 }
             }
         }
         None
+    }
+
+    // this is just used for testing and plotting the entire tree
+    pub fn plan_one_return_incomplete(&self) -> Option<LineString<f64>> {
+        if let Some(rnd_node) = self.get_random_node() {
+            if self.verify_node(rnd_node.clone()) {
+                self.spatial
+                    .lock()
+                    .unwrap()
+                    .insert(NodeEnvelope::new(rnd_node.clone()));
+
+                if let Some(finish) = self.check_finish(rnd_node.clone()) {
+                    return Some(finish);
+                }
+            }
+            let line = self.finalize(rnd_node.clone());
+            if self.space.verify(&line) {
+                Some(line)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     // See if there is a simple route before RRT planning.

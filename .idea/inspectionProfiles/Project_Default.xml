@@ -1,0 +1,30 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <list>
+          <option value="common" />
+          <option value="python-trc-rpc" />
+          <option value="path_planning" />
+          <option value="rtree" />
+          <option value="pexpect" />
+          <option value="xbox360controller" />
+          <option value="smbus2" />
+          <option value="spidev" />
+          <option value="pyserial" />
+          <option value="pyserial-asyncio" />
+          <option value="bitstring" />
+          <option value="rdp" />
+          <option value="Shapely" />
+          <option value="pyubx2" />
+          <option value="requests" />
+          <option value="protobuf" />
+          <option value="numpy" />
+          <option value="rtcm-tools" />
+          <option value="trc" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
